@@ -20,25 +20,30 @@ def make_dashboard():
     def update_data():
         try:
             data = pl.read_parquet('co2data.parquet')
+            data = data.with_columns(
+                co2_rolling=pl.col('co2').rolling_median_by('timestamp', window_size='5m'),
+                temp_rolling=pl.col('temp').rolling_median_by('timestamp', window_size='5m'),
+                rh_rolling=pl.col('rh').rolling_median_by('timestamp', window_size='5m')
+            )
             time_now = data['timestamp'][-1]
             time_start = time_now - timedelta(days=1)
             data = data.filter(pl.col('timestamp') >= time_start)
 
-            co2 = hv.Curve((data['timestamp'], data['co2']), kdims=['Time'], vdims=['CO2 Concentration (ppm)']).opts(
-                color='orange', tools=['hover'], alpha=0.5) * hv.Scatter((data['timestamp'], data['co2']),
+            co2 = hv.Curve((data['timestamp'], data['co2_rolling']), kdims=['Time'], vdims=['CO2 Concentration (ppm)']).opts(
+                color='orange', tools=['hover'], alpha=0.5) * hv.Scatter((data['timestamp'], data['co2_rolling']),
                                                                           kdims=['Time'],
                                                                           vdims=['CO2 Concentration (ppm)']).opts(
                 marker='o', color='orange', size=3, tools=['hover'])
 
-            temp_f = data['temp'] * 9 / 5 + 32
+            temp_f = data['temp_rolling'] * 9 / 5 + 32
             temp = hv.Curve((data['timestamp'], temp_f), kdims=['Time'], vdims=['Temperature (F)']).opts(
                 color='red', tools=['hover'], alpha=0.5) * hv.Scatter((data['timestamp'], temp_f),
                                                                       kdims=['Time'],
                                                                       vdims=['Temperature (F)']).opts(
                 marker='o', color='red', size=3, tools=['hover'])
 
-            rh = hv.Curve((data['timestamp'], data['rh']), kdims=['Time'], vdims=['Relative Humidity (%)']).opts(
-                color='green', tools=['hover'], alpha=0.5) * hv.Scatter((data['timestamp'], data['rh']),
+            rh = hv.Curve((data['timestamp'], data['rh_rolling']), kdims=['Time'], vdims=['Relative Humidity (%)']).opts(
+                color='green', tools=['hover'], alpha=0.5) * hv.Scatter((data['timestamp'], data['rh_rolling']),
                                                                         kdims=['Time'],
                                                                         vdims=['Relative Humidity (%)']).opts(
                 marker='o', color='green', size=3, tools=['hover'])
