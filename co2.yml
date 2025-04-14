@@ -1,0 +1,16 @@
+name: co2
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - numpy
+  - polars
+  - panel
+  - holoviews
+  - ca-certificates
+  - openssl
+  - pyserial
+  - pyusb
+  - certifi
+  - sysv_ipc
+prefix: /home/stgardner4/miniforge3/envs/co2
