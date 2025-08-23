@@ -3,11 +3,11 @@ Description=Collect CO2 data
 After=syslog.target
 
 [Service]
-ExecStart=/home/stgardner4/miniforge3/envs/co2/bin/python3 /home/stgardner4/co2_collect.py
+ExecStart=/home/stgardner4/raspi-co2-monitor/.venv/bin/python3 /home/stgardner4/raspi-co2-monitor/co2_collect.py
 Restart=always
 RestartSec=1
 RuntimeMaxSec=600
-WorkingDirectory=/home/stgardner4/
+WorkingDirectory=/home/stgardner4/raspi-co2-monitor
 User=stgardner4
 SyslogIdentifier=co2_collect
 

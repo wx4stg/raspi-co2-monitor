@@ -39,10 +39,11 @@ if __name__ == '__main__':
             this_t = scd4x.temperature
             this_rh = scd4x.relative_humidity
 
+            this_t_f = 1.8*this_t + 32
             print(f"CO2: {this_co2} ppm, T: {this_t:.1f} °C, RH: {this_rh:.1f}%")
-            push_sensor("sensor.living_room_co2", this_co2, "ppm", "Living Room CO₂")
-            push_sensor("sensor.living_room_temperature", round(this_t, 1), "°C", "Living Room Temperature")
-            push_sensor("sensor.living_room_humidity", round(this_rh, 1), "%", "Living Room Humidity")
+            push_sensor("sensor.office_co2", this_co2, "ppm", "Office CO₂")
+            push_sensor("sensor.office_temperature", round(this_t_f, 2), "°F", "Office Temperature")
+            push_sensor("sensor.office_humidity", round(this_rh, 2), "%", "Office Humidity")
             sleep(10)
         else:
             sleep(0.1)
