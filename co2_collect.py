@@ -1,43 +1,48 @@
 from time import sleep
 import board
 import adafruit_scd4x
-import polars as pl
-from os import path, remove
-from datetime import datetime as dt, timezone
-import numpy as np
+import requests
+
+HA_URL = 'http://homeassistant:8123/api/states/'
+with open('secrets.txt', 'r') as f:
+    TOKEN = f.read().strip()
+
+headers = {
+    "Authorization": f"Bearer {TOKEN}",
+    "content-type": "application/json",
+}
+
+def push_sensor(entity_id, value, unit, name):
+    url = HA_URL + entity_id
+    data = {
+        "state": value,
+        "attributes": {
+            "unit_of_measurement": unit,
+            "friendly_name": name
+        }
+    }
+    try:
+        requests.post(url, headers=headers, json=data, timeout=5)
+    except Exception as e:
+        print(f"Error posting {entity_id}: {e}")
 
 if __name__ == '__main__':
     i2c = board.I2C()
     scd4x = adafruit_scd4x.SCD4X(i2c)
 
     scd4x.start_periodic_measurement()
-    if path.exists('co2data.parquet'):
-        my_df = pl.read_parquet('co2data.parquet')
-    else:
-        my_df = pl.DataFrame(
-            schema=[
-                ('timestamp', pl.Datetime('ms', 'UTC')),
-                ('co2', pl.UInt16),
-                ('temp', pl.Float32),
-                ('rh', pl.Float32)
-            ]
-        )
+    print("Waiting for first measurement...")
+
     while True:
         if scd4x.data_ready:
-            this_dt = dt.now(timezone.utc)
             this_co2 = scd4x.CO2
             this_t = scd4x.temperature
             this_rh = scd4x.relative_humidity
-            new_data = pl.DataFrame({
-                                     'timestamp' : [this_dt],
-                                     'co2' : [scd4x.CO2],
-                                     'temp' : [scd4x.temperature],
-                                     'rh' : [scd4x.relative_humidity]})
-            new_data = new_data.cast({'timestamp' : pl.Datetime('ms', 'UTC'), 'co2': pl.UInt16, 'temp' : pl.Float32, 'rh' : pl.Float32})
-            my_df = pl.concat([my_df, new_data])
-            if path.exists('co2data.parquet'):
-                remove('co2data.parquet')
-            my_df.write_parquet('co2data.parquet')
-            sleep(1)
+
+            print(f"CO2: {this_co2} ppm, T: {this_t:.1f} °C, RH: {this_rh:.1f}%")
+            push_sensor("sensor.living_room_co2", this_co2, "ppm", "Living Room CO₂")
+            push_sensor("sensor.living_room_temperature", round(this_t, 1), "°C", "Living Room Temperature")
+            push_sensor("sensor.living_room_humidity", round(this_rh, 1), "%", "Living Room Humidity")
+            sleep(10)
         else:
             sleep(0.1)
